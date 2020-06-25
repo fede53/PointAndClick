@@ -5,23 +5,29 @@ using UnityEngine.AI;
 
 public class PlayerScript : MonoBehaviour
 {
+    [SerializeField] LayerMask interactLayer;
+
     private NavMeshAgent agent;
     private Camera mainCamera;
 
     private bool turning;
     private Quaternion targetRot;
 
+    private PlayerAnimation playerAnim = new PlayerAnimation();
+
+    // Use this for initialization
     void Start()
     {
         mainCamera = Camera.main;
 
         agent = GetComponent<NavMeshAgent>();
+
+        playerAnim.Init(GetComponentInChildren<Animator>());
     }
 
+    // Update is called once per frame
     void Update()
     {
-        UpdateAnimator();
-
         if (Input.GetMouseButtonDown(0) && !Extensions.IsMouseOverUI())
             OnClick();
 
@@ -29,6 +35,8 @@ public class PlayerScript : MonoBehaviour
         {
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 15f * Time.deltaTime);
         }
+
+        playerAnim.UpdateAnimation(agent.velocity.sqrMagnitude);
     }
 
     void OnClick()
@@ -37,7 +45,7 @@ public class PlayerScript : MonoBehaviour
 
         RaycastHit hit;
         Ray camToScreen = mainCamera.ScreenPointToRay(Input.mousePosition);
-
+       // , interactLayer
         if (Physics.Raycast(camToScreen, out hit, Mathf.Infinity))
         {
             if (hit.collider != null)
@@ -69,18 +77,9 @@ public class PlayerScript : MonoBehaviour
         turning = false;
 
         agent.SetDestination(targetPosition);
+
         DialogSystem.Instance.HideDialog();
     }
-
-
-    private void UpdateAnimator()
-    {
-        Vector3 velocity = agent.velocity;
-        Vector3 localVelocity = transform.InverseTransformDirection(velocity);
-        float speed = localVelocity.z;
-        GetComponent<Animator>().SetFloat("Velocity", speed);
-    }
-
 
     public void SetDirection(Vector3 targetDirection)
     {
